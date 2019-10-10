@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * Class U9WS
- * @package Goodcatch\U9WS\Facades
+ * @package Goodcatch\FXK\Facades
  */
 class FXK extends Facade
 {
