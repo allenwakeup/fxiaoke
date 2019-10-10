@@ -15,7 +15,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\SeekException;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\RequestOptions;
 
 
 /**
@@ -188,7 +187,7 @@ class FXK
 
         return new Request('POST', $this->url . $method, [
             'Content-Type' => 'application/json;charset=utf-8',
-        ], [RequestOptions::JSON => $req]);
+        ], \GuzzleHttp\json_encode ($req));
     }
 
     /**
