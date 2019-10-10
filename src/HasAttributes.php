@@ -56,6 +56,8 @@ trait HasAttributes
                         if (isset($item) && is_array($item))
                         {
                             $arr->push(new Model($item));
+                        } else {
+                            $arr->push($item);
                         }
                         return $arr;
                     }, \collect([]));

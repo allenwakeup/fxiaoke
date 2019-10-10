@@ -15,6 +15,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\SeekException;
 use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Facades\Cache;
 
 
 /**
@@ -23,6 +24,8 @@ use GuzzleHttp\Psr7\Request;
  */
 class FXK
 {
+
+    const CACHE_KEY_CORPACCESSTOKEN_EXPIRESIN = 'fxiaoke_corpAccessToken_expiresIn';
 
     /**
      * https://open.fxiaoke.com/cgi/
@@ -159,6 +162,9 @@ class FXK
         $transform = new Model;
 
         $transform->data = $collection ?? \collect ([]);
+        $transform->errorCode = $model->errorCode;
+        $transform->errorMessage = $model->errorMessage;
+        $transform->errorDescription = $model->errorDescription;
 
         // got error
         if (isset ($model->exception))
@@ -200,15 +206,37 @@ class FXK
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function getModel (string $method, array $params = [], int $page_no = 1, int $page_size = 10): Model
+    private function getModel (string $method, array $params = []): Model
     {
 
-        return $this->exec(
-            $this->request($method, $params, $page_no, $page_size)
+        return $this->exec (
+            $this->request ($method, $params)
         );
     }
 
-    public function getCorpAccessToken ()
+    /**
+     * Get model by parameter key-value
+     *
+     * @param string $method
+     * @param string|null $param_key
+     * @param string|null $param_val
+     * @param array $params
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function getModelByParameter (string $method, string $param_key = null, string $param_val = null, array $params = []): Model
+    {
+        if (! is_null($param_val) && ! is_null ($param_key))
+        {
+            $params [$param_key] = $param_val;
+        }
+        return $this->getModel ($method, $params);
+    }
+
+    /**
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function freshCorpAccessToken ()
     {
         if (is_null ($this->corpAccessToken))
         {
@@ -219,13 +247,30 @@ class FXK
             ]);
             if ($model->errorCode == 0)
             {
-                $this->corpAccessToken = $model;
-                $this->corpAccessToken->expired = time () + $this->corpAccessToken->expiresIn;
+                $this->corpAccessToken = $model->toArray ();
+                Cache::put (self::CACHE_KEY_CORPACCESSTOKEN_EXPIRESIN, $this->corpAccessToken, $this->corpAccessToken ['expiresIn']);
             }
-        } else if (time () > $this->corpAccessToken->expired) {
+        } else if (! Cache::has (self::CACHE_KEY_CORPACCESSTOKEN_EXPIRESIN)) {
             $this->corpAccessToken = null;
             $this->getCorpAccessToken ();
         }
+    }
+
+    /**
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function getCorpAccessToken (): array
+    {
+        $this->freshCorpAccessToken ();
+
+        if (! is_null ($this->corpAccessToken)) {
+            return [
+                'corpId' => $this->corpAccessToken ['corpId'],
+                'corpAccessToken' => $this->corpAccessToken ['corpAccessToken']
+            ];
+        }
+        return [];
     }
 
     /**
@@ -235,19 +280,66 @@ class FXK
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getDepartments ()
+    public function getDepartments (): Model
     {
-        $this->getCorpAccessToken ();
 
-        if (! is_null ($this->corpAccessToken))
-        {
-            $model = $this->getModel('department/list', [
-                'corpId' => $this->corpAccessToken->corpId,
-                'corpAccessToken' => $this->corpAccessToken->corpAccessToken
-            ]);
+        $model = $this->getModel('department/list', $this->getCorpAccessToken ());
 
-            return $this->transform ($model, $model->departments);
-        }
+        return $this->transform ($model, $model->departments);
 
     }
+
+    /**
+     * @param int $departmentId
+     * @param boolean $fetchChild
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getUsers (int $departmentId = 0, $fetchChild = true): Model
+    {
+
+        $accessToken = $this->getCorpAccessToken ();
+        $this->query()
+            ->criteria('fetchChild', $fetchChild)
+            ->criteria('departmentId', $departmentId)
+        ;
+
+        $model = $this->getModel ('user/list', $accessToken);
+
+        return $this->transform ($model, $model->userList);
+
+    }
+
+    /**
+     * @param string $openUserId
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getUser (string $openUserId = ''): Model
+    {
+
+        return $this->getModelByParameter ('user/get', 'openUserId', $openUserId, $this->getCorpAccessToken ());
+    }
+
+    /**
+     * @param int $departmentId
+     * @param string $mobile
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getDepUserByMobile (int $departmentId = 0, string $mobile): Model
+    {
+        $model = $this->getUsers($departmentId);
+        if ($model->data->count() > 0)
+        {
+            return $model->data
+                ->filter (function ($item) use ($mobile) {
+                    return $item->mobile === $mobile;
+                })
+                ->first ();
+        }
+        return null;
+    }
+
+
 }
