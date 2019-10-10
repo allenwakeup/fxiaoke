@@ -41,7 +41,7 @@ trait HasAttributes
      * Fill the model with an array of attributes.
      *
      * @param  array  $attributes
-     * @return \Goodcatch\Guanyi\Model
+     * @return \Goodcatch\FXK\Model
      *
      */
     public function fill(array $attributes)

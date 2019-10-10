@@ -19,7 +19,7 @@ use JsonSerializable;
 
 /**
  * Class Model
- * @package Goodcatch\Guanyi
+ * @package Goodcatch\FXK
  * @author Allen, Li
  */
 class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializable

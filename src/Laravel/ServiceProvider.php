@@ -16,7 +16,7 @@ use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 
 /**
  * Class ServiceProvider
- * @package Goodcatch\U9WS\Laravel
+ * @package Goodcatch\FXK\Laravel
  */
 class ServiceProvider extends LaravelServiceProvider
 {
@@ -44,7 +44,7 @@ class ServiceProvider extends LaravelServiceProvider
     }
 
     /**
-     * Setup the resource publishing groups for Horizon.
+     * Setup the resource publishing groups for Fxiaoke.
      *
      * @return void
      */
@@ -59,10 +59,7 @@ class ServiceProvider extends LaravelServiceProvider
     }
 
     /**
-     * Register Guanyi services in the container.
-     *
-     * @see link(http://gop.guanyierp.com/hc/kb/article/1235511/ Api_doc)
-     *
+     * Register Fxiaoke services in the container.
      *
      * @return void
      */

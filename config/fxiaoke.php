@@ -18,7 +18,9 @@ return [
     |
     */
 
-
-
+    'url' => env('FXK_API', 'https://open.fxiaoke.com/cgi/'),
+    'appId' => env('FXK_APPID', ''),
+    'appSecret' => env('FXK_SECRET', ''),
+    'permanentCode' => env('FXK_PERMANENT_CODE', ''),
 
 ];
