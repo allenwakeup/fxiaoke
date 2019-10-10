@@ -1,6 +1,6 @@
 {
-    "name": "goodcatch/u9ws",
-    "description": "U9 webservice sdk",
+    "name": "goodcatch/fxiaoke",
+    "description": "fxiaoke php library",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -25,10 +25,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Goodcatch\\U9WS\\Laravel\\ServiceProvider"
+                "Goodcatch\\FXK\\Laravel\\ServiceProvider"
             ],
             "aliases": {
-                "Guanyi": "Goodcatch\\U9WS\\Facades\\U9WS"
+                "Guanyi": "Goodcatch\\FXK\\Facades\\FXK"
             }
         }
     }
