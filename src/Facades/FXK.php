@@ -9,7 +9,7 @@
  * with this source code in the file LICENSE.
  */
 
-namespace Goodcatch\U9WS\Facades;
+namespace Goodcatch\FXK\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
