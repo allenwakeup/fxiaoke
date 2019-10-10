@@ -5,7 +5,7 @@
 ## Installation
 
 ```
-composer require goodcatch/guanyierp
+composer require goodcatch/fxiaoke
 
 php artisan vendor:publish --tag fxiaoke-config
 ```
