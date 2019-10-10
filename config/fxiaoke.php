@@ -23,4 +23,14 @@ return [
     'appSecret' => env('FXK_SECRET', ''),
     'permanentCode' => env('FXK_PERMANENT_CODE', ''),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Request time out
+    |--------------------------------------------------------------------------
+    |
+    | seconds of timeout
+    |
+    */
+    'timeout' => env('FXK_TIMEOUT', 2),
+
 ];
