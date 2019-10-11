@@ -40,7 +40,7 @@ class Model implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
      */
     protected function asJson($value)
     {
-        return json_encode($value, JSON_UNESCAPED_UNICODE);
+        return json_encode($value);
     }
 
 

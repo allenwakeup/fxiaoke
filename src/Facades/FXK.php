@@ -14,7 +14,7 @@ namespace Goodcatch\FXK\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * Class U9WS
+ * Class FXK
  * @package Goodcatch\FXK\Facades
  */
 class FXK extends Facade
