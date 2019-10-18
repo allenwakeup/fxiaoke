@@ -69,6 +69,10 @@ class FXK
      */
     private $corpAccessToken = null;
 
+    /**
+     * @var array filter
+     */
+    private $filter;
 
     /**
      * Guanyi constructor.
@@ -187,16 +191,8 @@ class FXK
      * @param array|null $req
      * @return Request
      */
-    private function request(string $method, array $req = null): Request
+    private function request(string $method, array $req = []): Request
     {
-        if (is_null($req)) {
-            $req = [];
-        }
-        if (isset ($this->criteria) && count ($this->criteria) > 0)
-        {
-            $req = array_merge ($this->criteria, $req);
-        }
-
         return new Request('POST', $this->url . $method, [
             'Content-Type' => 'application/json;charset=utf-8',
         ], \GuzzleHttp\json_encode ($req));
@@ -212,6 +208,14 @@ class FXK
      */
     private function getModel (string $method, array $params = []): Model
     {
+
+        $params = array_merge ($params, $this->getCorpAccessToken ());
+
+
+        if (isset ($this->criteria) && count ($this->criteria) > 0)
+        {
+            $params = array_merge ($this->criteria, $params);
+        }
 
         return $this->exec (
             $this->request ($method, $params)
@@ -237,6 +241,26 @@ class FXK
         return $this->getModel ($method, $params);
     }
 
+    /**
+     * Get model by parameter key-value
+     *
+     * @param string $method
+     * @param string $currentOpenUserId
+     * @param array $params
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function getModelByAdminUser (string $method, string $currentOpenUserId, array $params = []): Model
+    {
+
+        if (empty ($currentOpenUserId))
+        {
+            $currentOpenUserId = $this->adminUser;
+        }
+
+        return $this->getModel ($method, $this->withAdminUserOpenId ($currentOpenUserId, $params));
+    }
+
 
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
@@ -245,11 +269,14 @@ class FXK
     {
         if (is_null ($this->corpAccessToken))
         {
-            $model = $this->getModel('corpAccessToken/get/V2', [
-                'appId' => $this->appId,
-                'appSecret' => $this->appSecret,
-                'permanentCode' => $this->permanentCode
-            ]);
+
+            $model = $this->exec (
+                $this->request ('corpAccessToken/get/V2', [
+                    'appId' => $this->appId,
+                    'appSecret' => $this->appSecret,
+                    'permanentCode' => $this->permanentCode
+                ])
+            );
             if ($model->errorCode == 0)
             {
                 $this->corpAccessToken = $model->toArray ();
@@ -295,6 +322,15 @@ class FXK
         return $params;
     }
 
+    private function filter ()
+    {
+        if (! isset ($this->filter))
+        {
+            $this->filter = new Filter;
+        }
+        return $this->filter;
+    }
+
     /**
      * 通讯录管理-获取部门列表
      * department/list
@@ -305,7 +341,7 @@ class FXK
     public function getDepartments (): Model
     {
 
-        $model = $this->getModel('department/list', $this->getCorpAccessToken ());
+        $model = $this->getModel('department/list');
 
         return $this->transform ($model, $model->departments);
 
@@ -320,13 +356,12 @@ class FXK
     public function getUsers (int $departmentId = 0, $fetchChild = true): Model
     {
 
-        $accessToken = $this->getCorpAccessToken ();
         $this->query()
             ->criteria('fetchChild', $fetchChild)
             ->criteria('departmentId', $departmentId)
         ;
 
-        $model = $this->getModel ('user/list', $accessToken);
+        $model = $this->getModel ('user/list');
 
         return $this->transform ($model, $model->userList);
 
@@ -341,7 +376,7 @@ class FXK
     public function getUser (string $openUserId = ''): Model
     {
 
-        return $this->getModelByParameter ('user/get', 'openUserId', $openUserId, $this->getCorpAccessToken ());
+        return $this->getModelByParameter ('user/get', 'openUserId', $openUserId);
     }
 
     /**
@@ -382,15 +417,13 @@ class FXK
     public function sendMessage ($users, $msg, $msgType='text'): Model
     {
 
-        $accessToken = $this->getCorpAccessToken ();
-
         $this->query ()
             ->criteria ($msgType, $msg)
             ->criteria ('toUser', $users)
             ->criteria ('msgType', $msgType)
         ;
 
-        return $this->getModel ('message/send', $accessToken);
+        return $this->getModel ('message/send');
 
     }
 
@@ -406,7 +439,7 @@ class FXK
      */
     public function getObjectList ($currentOpenUserId = ''): Model
     {
-        return $this->getModelByAdminUser ('crm/v2/object/list', $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ()));
+        return $this->getModelByAdminUser ('crm/v2/object/list', $currentOpenUserId);
     }
 
     /**
@@ -419,11 +452,10 @@ class FXK
      */
     public function getObjectDesc ($apiName, $currentOpenUserId = ''): Model
     {
-        $params = $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ());
 
         $this->query ()->criteria ('apiName', $apiName);
 
-        return $this->getModelByAdminUser ('crm/v2/object/describe', $params);
+        return $this->getModelByAdminUser ('crm/v2/object/describe', $currentOpenUserId);
 
     }
 
@@ -437,14 +469,43 @@ class FXK
      */
     public function addCRMCustomObject ($data, $currentOpenUserId = '', $triggerWorkFlow = false): Model
     {
-        $params = $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ());
 
         $this->query ()
             ->criteria ('triggerWorkFlow', $triggerWorkFlow)
             ->criteria ('data', $data)
         ;
 
-        return $this->getModelByAdminUser ('crm/custom/data/create', $params);
+        return $this->getModelByAdminUser ('crm/custom/data/create', $currentOpenUserId);
+
+    }
+
+    /**
+     *
+     * @param string $apiName
+     * @param string $currentOpenUserId
+     * @param int $offset integer that larger than 0
+     * @param int $limit max 100
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getCRMCustomObject ($apiName, $currentOpenUserId = '', $offset = 1, $limit = 100): Model
+    {
+        $this->query ()
+            ->criteria ('data', [
+                'dataObjectApiName' => $apiName,
+                'search_query_info' => [
+                    'search_query_info' => [
+                        'limit' => $limit, // max 100
+                        'offset' => $offset, // integer large than 0
+                        'filters' => $this->filter ()->build (),
+                        'orders' => $this->filter ()->buildOrder ()
+                    ]
+                    // , 'fieldProjection' => []
+                ]
+            ])
+        ;
+
+        return $this->getModelByAdminUser ('crm/custom/data/query', $currentOpenUserId);
 
     }
 
