@@ -22,6 +22,7 @@ return [
     'appId' => env('FXK_APPID', ''),
     'appSecret' => env('FXK_SECRET', ''),
     'permanentCode' => env('FXK_PERMANENT_CODE', ''),
+    'adminUser' => env('FXK_ADMIN_USER', ''),
 
     /*
     |--------------------------------------------------------------------------

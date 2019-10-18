@@ -30,24 +30,29 @@ class FXK
     /**
      * https://open.fxiaoke.com/cgi/
      *
-     * @var mixed API URL
+     * @var string API URL
      */
     private $url;
 
     /**
-     * @var mixed app key
+     * @var string app key
      */
     private $appId;
 
     /**
-     * @var mixed app secret
+     * @var string app secret
      */
     private $appSecret;
 
     /**
-     * @var mixed permanent code
+     * @var string permanent code
      */
     private $permanentCode;
+
+    /**
+     * @var string admin user open id
+     */
+    private $adminUser;
 
     /**
      * @var Client http client
@@ -74,6 +79,7 @@ class FXK
         $this->appId = $config ['appId'];
         $this->appSecret = $config ['appSecret'];
         $this->permanentCode = $config ['permanentCode'];
+        $this->adminUser = $config ['adminUser'];
         $this->url = $config ['url'];
 
         $this->client = new Client([
@@ -201,8 +207,6 @@ class FXK
      *
      * @param string $method
      * @param array $params
-     * @param int $page_no
-     * @param int $page_size
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
@@ -232,6 +236,7 @@ class FXK
         }
         return $this->getModel ($method, $params);
     }
+
 
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
@@ -274,6 +279,23 @@ class FXK
     }
 
     /**
+     * add additional parameter admin user open id
+     *
+     * @param $currentOpenUserId
+     * @param array $params
+     * @return array
+     */
+    private function withAdminUserOpenId ($currentOpenUserId, array $params = [])
+    {
+        if (! empty ($currentOpenUserId))
+        {
+            $params ['currentOpenUserId'] = $currentOpenUserId;
+        }
+
+        return $params;
+    }
+
+    /**
      * 通讯录管理-获取部门列表
      * department/list
      *
@@ -310,6 +332,7 @@ class FXK
 
     }
 
+
     /**
      * @param string $openUserId
      * @return Model
@@ -323,22 +346,106 @@ class FXK
 
     /**
      * @param int $departmentId
-     * @param string $mobile
+     * @param mixed search
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getDepUserByMobile (int $departmentId = 0, string $mobile): Model
+    public function findUser (int $departmentId = 0, string $search): Model
     {
         $model = $this->getUsers($departmentId);
         if ($model->data->count() > 0)
         {
             return $model->data
-                ->filter (function ($item) use ($mobile) {
-                    return $item->mobile === $mobile;
+                ->filter (function ($item) use ($search) {
+
+                    return $item->employeeNumber === $search
+                        || $item->mobile === $search
+                        || $item->email === $search
+                        || $item->name === $search
+                        || $item->account === $search
+                        || $item->nickName === $search
+                        || $item->birthDate === $search
+                        ;
                 })
                 ->first ();
         }
         return null;
+    }
+
+    /**
+     * @param array $users
+     * @param array $msg
+     * @param string $msgType
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function sendMessage ($users, $msg, $msgType='text'): Model
+    {
+
+        $accessToken = $this->getCorpAccessToken ();
+
+        $this->query ()
+            ->criteria ($msgType, $msg)
+            ->criteria ('toUser', $users)
+            ->criteria ('msgType', $msgType)
+        ;
+
+        return $this->getModel ('message/send', $accessToken);
+
+    }
+
+
+
+
+    /**
+     *  CRM Object List, depend on admin user
+     *
+     * @param string $currentOpenUserId
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getObjectList ($currentOpenUserId = ''): Model
+    {
+        return $this->getModelByAdminUser ('crm/v2/object/list', $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ()));
+    }
+
+    /**
+     *  CRM Object description, depend on admin user
+     *
+     * @param string $apiName
+     * @param string $currentOpenUserId
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getObjectDesc ($apiName, $currentOpenUserId = ''): Model
+    {
+        $params = $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ());
+
+        $this->query ()->criteria ('apiName', $apiName);
+
+        return $this->getModelByAdminUser ('crm/v2/object/describe', $params);
+
+    }
+
+    /**
+     *
+     * @param array $data 对象数据map ["object_data"=>[]]
+     * @param string $currentOpenUserId
+     * @param boolean $triggerWorkFlow 是否需要触发工作流(默认不传时为true)
+     * @return Model
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function addCRMCustomObject ($data, $currentOpenUserId = '', $triggerWorkFlow = false): Model
+    {
+        $params = $this->withAdminUserOpenId ($currentOpenUserId, $this->getCorpAccessToken ());
+
+        $this->query ()
+            ->criteria ('triggerWorkFlow', $triggerWorkFlow)
+            ->criteria ('data', $data)
+        ;
+
+        return $this->getModelByAdminUser ('crm/custom/data/create', $params);
+
     }
 
 
