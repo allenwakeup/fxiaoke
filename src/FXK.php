@@ -250,7 +250,7 @@ class FXK
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function getModelByAdminUser (string $method, string $currentOpenUserId, array $params = []): Model
+    private function getModelByAdminUser (string $method, string $currentOpenUserId = '', array $params = []): Model
     {
 
         if (empty ($currentOpenUserId))
@@ -322,13 +322,12 @@ class FXK
         return $params;
     }
 
-    private function filter ()
+    /**
+     * @return Filter
+     */
+    public function filter ()
     {
-        if (! isset ($this->filter))
-        {
-            $this->filter = new Filter;
-        }
-        return $this->filter;
+        return $this->filter = new Filter ($this);
     }
 
     /**
@@ -380,12 +379,12 @@ class FXK
     }
 
     /**
-     * @param int $departmentId
      * @param mixed search
+     * @param int $departmentId
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function findUser (int $departmentId = 0, string $search): Model
+    public function findUser (string $search, int $departmentId = 0): Model
     {
         $model = $this->getUsers($departmentId);
         if ($model->data->count() > 0)

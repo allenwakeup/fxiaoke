@@ -11,8 +11,6 @@
 
 namespace Goodcatch\FXK;
 
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Expression;
 use InvalidArgumentException;
 
 
@@ -46,6 +44,11 @@ class Filter
     ];
 
     /**
+     * @var mixed caller
+     */
+    private $caller;
+
+    /**
      * @var array filter
      */
     private $filter = [];
@@ -54,6 +57,15 @@ class Filter
      * @var array order
      */
     private $order = [];
+
+    /**
+     * Filter constructor.
+     * @param mixed $caller
+     */
+    public function __construct($caller)
+    {
+        $this->caller = $caller;
+    }
 
     private function order ($field, $isAsc = true)
     {
@@ -153,14 +165,27 @@ class Filter
         return ! array_key_exists(strtoupper($operator), self::FILTER_OPERATOR);
     }
 
-
+    /**
+     * @return array
+     */
     public function build () {
         return $this->filter;
     }
 
+    /**
+     * @return array
+     */
     public function buildOrder ()
     {
         return $this->order;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function end ()
+    {
+        return $this->caller;
     }
 
 }
