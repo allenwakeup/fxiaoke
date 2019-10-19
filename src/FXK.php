@@ -147,10 +147,15 @@ class FXK
         } catch (SeekException $e) {
             $result = new Model;
             $result->exception = [$e->getMessage()];
-        }
-        if (isset ($this->criteria))
-        {
-            unset ($this->criteria);
+        } finally {
+            if (isset ($this->criteria))
+            {
+                unset ($this->criteria);
+            }
+            if (isset ($this->filter))
+            {
+                unset ($this->filter);
+            }
         }
 
         return $result;
@@ -493,14 +498,13 @@ class FXK
             ->criteria ('data', [
                 'dataObjectApiName' => $apiName,
                 'search_query_info' => [
-                    'search_query_info' => [
-                        'limit' => $limit, // max 100
-                        'offset' => $offset, // integer large than 0
-                        'filters' => $this->filter ()->build (),
-                        'orders' => $this->filter ()->buildOrder ()
-                    ]
-                    // , 'fieldProjection' => []
+                    'limit' => $limit, // max 100
+                    'offset' => $offset, // integer large than 0
+                    'filters' => $this->filter ()->build (),
+                    'orders' => $this->filter ()->buildOrder ()
                 ]
+                // , 'fieldProjection' => []
+
             ])
         ;
 
