@@ -70,7 +70,7 @@ class FXK
     private $corpAccessToken = null;
 
     /**
-     * @var array filter
+     * @var Filter filter
      */
     private $filter;
 
@@ -332,7 +332,11 @@ class FXK
      */
     public function filter ()
     {
-        return $this->filter = new Filter ($this);
+        if (! isset ($this->filter))
+        {
+            $this->filter = new Filter ($this);
+        }
+        return $this->filter;
     }
 
     /**
