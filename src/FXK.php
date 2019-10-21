@@ -128,7 +128,7 @@ class FXK
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function exec(Request $request): Model
+    public function exec(Request $request, $clear = true): Model
     {
         $result = null;
         try {
@@ -148,13 +148,16 @@ class FXK
             $result = new Model;
             $result->exception = [$e->getMessage()];
         } finally {
-            if (isset ($this->criteria))
+            if ($clear)
             {
-                unset ($this->criteria);
-            }
-            if (isset ($this->filter))
-            {
-                unset ($this->filter);
+                if (isset ($this->criteria))
+                {
+                    unset ($this->criteria);
+                }
+                if (isset ($this->filter))
+                {
+                    unset ($this->filter);
+                }
             }
         }
 
