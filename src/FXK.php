@@ -125,6 +125,7 @@ class FXK
 
     /**
      * @param Request $request
+     * @param boolean clear criteria, filter
      * @return Model
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
@@ -283,7 +284,8 @@ class FXK
                     'appId' => $this->appId,
                     'appSecret' => $this->appSecret,
                     'permanentCode' => $this->permanentCode
-                ])
+                ]),
+                false
             );
             if ($model->errorCode == 0)
             {
