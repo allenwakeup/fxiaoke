@@ -112,7 +112,7 @@ class Filter
 
         $this->filter[] = [
             'field_name' => $field,
-            'field_values' => $value,
+            'field_values' => is_array($value) ? $value : [$value],
             'operator' => self::FILTER_OPERATOR [$operator]
         ];
 
@@ -177,6 +177,10 @@ class Filter
      */
     public function buildOrder ()
     {
+        if (count ($this->order) < 1 && count ($this->filter) > 0)
+        {
+            $this->order ($this->filter [0] ['field_name']);
+        }
         return $this->order;
     }
 
